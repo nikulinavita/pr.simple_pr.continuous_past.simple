@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Grammar Garden</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #a8e6cf, #dcedc1, #fdffab);
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(46, 139, 87, 0.9);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #fffacd;
+            font-size: 2.5rem;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: #fff;
+            font-size: 1.2rem;
+            margin: 10px 0 0 0;
+        }
+
+        .game-area {
+            position: relative;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            border: 3px dashed #3cb371;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(46, 139, 87, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 10;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .catchable-item {
+            position: absolute;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+            animation: itemFall linear infinite;
+            user-select: none;
+        }
+
+        .catchable-item:hover {
+            transform: scale(1.2);
+            filter: brightness(1.2);
+        }
+
+        /* Анимация всплывающего штрафа */
+        .penalty-text {
+            position: absolute;
+            color: #d32f2f;
+            font-size: 1.5rem;
+            font-weight: bold;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 20;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+        @keyframes itemFall {
+            0% { transform: translateY(-50px) rotate(-15deg); opacity: 1; }
+            50% { transform: translateY(250px) rotate(15deg); }
+            100% { transform: translateY(550px) rotate(-15deg); opacity: 0.8; }
+        }
+
+        .question-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 3px solid #ff69b4;
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            color: #2e8b57;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .task-card {
+            background: #fffacd;
+            border: 3px dashed #ff69b4;
+            padding: 15px 25px;
+            border-radius: 15px;
+            display: inline-block;
+            text-align: left;
+            font-size: 1.2rem;
+            color: #444;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .task-card div { margin: 5px 0; }
+        .task-card span { color: #2e8b57; font-weight: bold; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn {
+            background: linear-gradient(145deg, #87ceeb, #5f9ea0);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .option-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            background: linear-gradient(145deg, #00bfff, #4682b4);
+        }
+
+        .option-btn.correct { background: linear-gradient(145deg, #4caf50, #45a049); }
+        .option-btn.incorrect { background: linear-gradient(145deg, #ff69b4, #db7093); }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .text-input {
+            padding: 12px 20px;
+            font-size: 1.4rem;
+            border: 3px solid #3cb371;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            font-family: inherit;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .text-input:focus { border-color: #ff69b4; }
+
+        .submit-btn {
+            background: linear-gradient(145deg, #ffb6c1, #ff69b4);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(145deg, #ff69b4, #db7093);
+        }
+
+        .eval-btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .eval-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .eval-btn:hover { transform: scale(1.05); }
+        .btn-correct { background: linear-gradient(145deg, #4caf50, #45a049); }
+        .btn-incorrect { background: linear-gradient(145deg, #ff6347, #d32f2f); }
+
+        .feedback {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 20px;
+        }
+
+        .feedback.correct { background: rgba(76, 175, 80, 0.2); color: #2e7d32; border: 2px solid #4caf50; }
+        .feedback.incorrect { background: rgba(219, 112, 147, 0.2); color: #c71585; border: 2px solid #db7093; }
+
+        .close-btn {
+            background: linear-gradient(145deg, #3cb371, #2e8b57);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover { transform: translateY(-2px); }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-text { font-size: 1.3rem; font-weight: bold; color: #2e8b57; }
+        .lives-text { font-size: 1.4rem; font-weight: bold; color: #ff4500; }
+
+        .progress-track {
+            background: #ddd;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #ffb6c1, #ff69b4);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .game-complete, .game-over {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .game-complete h2 { color: #2e8b57; font-size: 2.2rem; margin-bottom: 20px; }
+        .game-over h2 { color: #d32f2f; font-size: 2.2rem; margin-bottom: 20px; }
+        .final-score { font-size: 1.5rem; color: #ff69b4; margin-bottom: 25px; }
+
+        .spring-bg-items {
+            position: fixed;
+            top: -10px;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .bg-item {
+            position: absolute;
+            font-size: 2rem;
+            animation: fall linear infinite;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .question-text { font-size: 1.2rem; }
+            .options-grid { grid-template-columns: 1fr; }
+            .stats-container { flex-direction: column; gap: 10px; }
+            .instructions { font-size: 0.9rem; width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="spring-bg-items" id="bg-items"></div>
+    
+    <div class="game-container">
+        <div class="header">
+            <h1>🌸 Spring Grammar Garden 🦋</h1>
+            <p>Catch the items and practice your English!</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="stats-container">
+                <div class="progress-text">Items caught: <span id="items-caught">0</span> of 17</div>
+                <div class="lives-text">Lives: <span id="lives-display">❤️❤️❤️❤️❤️</span></div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="game-area" id="game-area">
+            <div class="instructions">Click the beautiful spring items! 🌸<br>Watch out for storms and bugs! 🌩️🕷️</div>
+        </div>
+
+        <div class="question-modal" id="question-modal">
+            <div class="modal-content">
+                <div class="question-text" id="question-text"></div>
+                <div class="options-grid" id="options-grid"></div>
+                <div class="input-container" id="input-container"></div>
+                <div class="feedback" id="feedback"></div>
+                <button class="close-btn" id="close-btn" onclick="closeModal()">Continue</button>
+            </div>
+        </div>
+
+        <div id="game-complete" class="game-complete">
+            <h2>🎉 Amazing Job! 🎉</h2>
+            <div class="final-score" id="final-score"></div>
+            <p id="completion-message"></p>
+            <button class="submit-btn" onclick="restartGame()">Play Again</button>
+        </div>
+
+        <div id="game-over" class="game-over">
+            <h2>🍂 Oh no! Out of lives! 🍂</h2>
+            <div class="final-score">You caught <span id="game-over-score">0</span> items.</div>
+            <p>Don't worry, spring always comes back. Let's try again!</p>
+            <button class="submit-btn" onclick="restartGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        let questions = [
+            // --- ЗАДАНИЯ НА ГОВОРЕНИЕ (Speaking) ---
+            {
+                type: "speaking",
+                tense: "Past Simple",
+                verb: "to plant",
+                targetWord: "planted",
+                explanation: "The past form is 'planted'."
+            },
+            {
+                type: "speaking",
+                tense: "Past Simple",
+                verb: "to catch",
+                targetWord: "caught",
+                explanation: "The past form is 'caught'."
+            },
+            {
+                type: "speaking",
+                tense: "Past Simple",
+                verb: "to see",
+                targetWord: "saw",
+                explanation: "The past form is 'saw'."
+            },
+
+            // --- ЗАДАНИЯ НА СОСТАВЛЕНИЕ ПРЕДЛОЖЕНИЙ (Устные) ---
+            {
+                type: "sentence",
+                tense: "Present Simple",
+                form: "Negative ➖",
+                subject: "The baby",
+                word: "giggle",
+                correctAnswers: ["The baby doesn't giggle"],
+                explanation: "We use 'doesn't' (does not) + base verb for he/she/it in Present Simple negative."
+            },
+            {
+                type: "sentence",
+                tense: "Present Continuous",
+                form: "Question ❓",
+                subject: "The ball",
+                word: "to roll",
+                correctAnswers: ["Is the ball rolling?"],
+                explanation: "For Present Continuous questions, we put 'Is' before the subject (the ball), and add '-ing' to the verb (rolling)."
+            },
+            {
+                type: "sentence",
+                tense: "Present Simple",
+                form: "Positive ➕",
+                subject: "The bird",
+                word: "to nestle",
+                correctAnswers: ["The bird nestles."],
+                explanation: "We add '-s' to the verb in Present Simple when the subject is he/she/it (the bird)."
+            },
+            {
+                type: "sentence",
+                tense: "Present Continuous",
+                form: "Positive ➕",
+                subject: "She",
+                verb: "to wear",
+                word: "a ribbon",
+                correctAnswers: ["She is wearing a ribbon."],
+                explanation: "Present Continuous uses 'is' + verb with '-ing' (is wearing) for something happening right now."
+            },
+            {
+                type: "sentence",
+                tense: "Present Simple",
+                form: "Question ❓",
+                subject: "He",
+                verb: "to push",
+                word: "a cart",
+                correctAnswers: ["Does he push a cart?"],
+                explanation: "In Present Simple questions for he/she/it, we start with 'Does' and use the base verb (push)."
+            },
+            {
+                type: "sentence",
+                tense: "Present Continuous",
+                form: "Negative ➖",
+                subject: "The bunny",
+                word: "hop",
+                correctAnswers: ["The bunny isn't hopping."],
+                explanation: "Present Continuous negative for 'it' (the bunny) is 'isn't' + verb with '-ing'. Remember to double the 'p' in hopping!"
+            },
+
+            // --- ОБЫЧНЫЕ ЗАДАНИЯ ---
+            {
+                type: "choice",
+                question: "The student usually _____ to school by bus.",
+                options: ["go", "goes", "is going"],
+                correct: 1,
+                explanation: "We use 'goes' for 'she' in Present Simple for a regular habit."
+            },
+            {
+                type: "choice",
+                question: "Look! The student _____ a beautiful spring picture right now.",
+                options: ["draws", "is drawing", "are drawing"],
+                correct: 1,
+                explanation: "We use 'is drawing' (Present Continuous) because it is happening right now."
+            },
+            {
+                type: "input",
+                question: "Type the correct word: The little bird _____ (try) to fly in spring.",
+                correctAnswer: "tries",
+                explanation: "When a verb ends in consonant + y (try), we change 'y' to 'i' and add '-es'."
+            },
+            {
+                type: "input",
+                question: "Type the correct word: My sister _____ (watch) TV in the evening.",
+                correctAnswer: "watches",
+                explanation: "When a verb ends in -ch (watch), we add '-es'."
+            },
+            {
+                type: "input",
+                question: "Type the correct word: The bee _____ (fly) from flower to flower.",
+                correctAnswer: "flies",
+                explanation: "Change 'y' to 'i' and add '-es' (fly -> flies)."
+            },
+            {
+                type: "choice",
+                question: "_____ the bear wake up in spring?",
+                options: ["Do", "Does", "Is"],
+                correct: 1,
+                explanation: "We use 'Does' for 'the bear' (he/she/it) in a question."
+            },
+            {
+                type: "input",
+                question: "Type the correct word: She always _____ (do) her homework after school.",
+                correctAnswer: "does",
+                explanation: "The verb 'do' changes to 'does' for he/she/it."
+            },
+            {
+                type: "choice",
+                question: "Look! The rabbit _____ jumping.",
+                options: ["am", "is", "are"],
+                correct: 1,
+                explanation: "We use 'is' for one rabbit (it) doing something right now."
+            }
+        ];
+
+        let itemsCaught = 0;
+        let totalItems = 17; 
+        let currentQuestionIndex = 0;
+        let answered = false;
+        let gameActive = true;
+        let itemInterval;
+        let lives = 5;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function updateLivesDisplay() {
+            let hearts = "";
+            for(let i=0; i<lives; i++) hearts += "❤️";
+            for(let i=0; i<5-lives; i++) hearts += "🖤";
+            document.getElementById('lives-display').textContent = hearts || "💔";
+        }
+
+        function loseLife() {
+            lives--;
+            updateLivesDisplay();
+            if (lives <= 0) {
+                gameActive = false;
+                clearInterval(itemInterval);
+                
+                // Если мы находимся на главном экране (модальное окно закрыто), показываем Game Over сразу
+                if (document.getElementById('question-modal').style.display !== 'flex') {
+                    setTimeout(showGameOver, 800);
+                }
+            }
+        }
+
+        function initGame() {
+            shuffleArray(questions);
+            updateLivesDisplay();
+            createBackgroundItems();
+            startItemSpawning();
+        }
+
+        function createBackgroundItems() {
+            const bgContainer = document.getElementById('bg-items');
+            bgContainer.innerHTML = ''; 
+            const emojis = ['🌸', '🌺', '🌼', '🍃', '🌷', '🌱', '🌻', '🍀'];
+            
+            for (let i = 0; i < 15; i++) {
+                const item = document.createElement('div');
+                item.className = 'bg-item';
+                item.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                item.style.left = Math.random() * 100 + '%';
+                item.style.animationDuration = (Math.random() * 5 + 4) + 's';
+                item.style.animationDelay = Math.random() * 4 + 's';
+                bgContainer.appendChild(item);
+            }
+        }
+
+        function startItemSpawning() {
+            itemInterval = setInterval(() => {
+                if (gameActive && itemsCaught < totalItems) {
+                    createCatchableItem();
+                }
+            }, 4000); 
+        }
+
+        function createCatchableItem() {
+            const gameArea = document.getElementById('game-area');
+            const goodEmojis = ['🌸', '🦋', '🐝', '🌼', '🐞', '🌷', '🐦', '🌈', '🌞'];
+            const badEmojis = ['🌩️', '🌧️', '🌪️', '🥀', '🕷️', '❄️'];
+            
+            // 30% шанс, что появится "плохой" предмет
+            const isBad = Math.random() < 0.3;
+            
+            const item = document.createElement('div');
+            item.className = 'catchable-item';
+            
+            if (isBad) {
+                item.textContent = badEmojis[Math.floor(Math.random() * badEmojis.length)];
+            } else {
+                item.textContent = goodEmojis[Math.floor(Math.random() * goodEmojis.length)];
+            }
+            
+            item.style.left = Math.random() * 80 + 10 + '%';
+            item.style.animationDuration = (Math.random() * 4 + 7) + 's';
+            
+            // Передаем статус "isBad" и событие "e" для определения координат клика
+            item.onclick = (e) => catchItem(item, isBad, e);
+            
+            gameArea.appendChild(item);
+            
+            setTimeout(() => {
+                if (item.parentNode) {
+                    item.parentNode.removeChild(item);
+                }
+            }, 12000); 
+        }
+
+        function showPenaltyText(x, y) {
+            const penaltyText = document.createElement('div');
+            penaltyText.textContent = "Ouch! 💔";
+            penaltyText.className = 'penalty-text';
+            
+            const gameAreaRect = document.getElementById('game-area').getBoundingClientRect();
+            // Высчитываем позицию клика относительно игрового поля
+            penaltyText.style.left = (x - gameAreaRect.left - 30) + 'px';
+            penaltyText.style.top = (y - gameAreaRect.top - 40) + 'px';
+            
+            document.getElementById('game-area').appendChild(penaltyText);
+
+            setTimeout(() => {
+                if(penaltyText.parentNode) penaltyText.parentNode.removeChild(penaltyText);
+            }, 1000);
+        }
+
+        function catchItem(element, isBad, event) {
+            if (!gameActive) return;
+            
+            element.style.animation = 'none';
+            element.style.transform = 'scale(1.5)';
+            element.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (element.parentNode) {
+                    element.parentNode.removeChild(element);
+                }
+            }, 300);
+            
+            if (isBad) {
+                showPenaltyText(event.clientX, event.clientY);
+                loseLife();
+                return; // Останавливаем выполнение, вопрос не открывается
+            }
+            
+            showQuestion();
+        }
+
+        function updateProgress() {
+            document.getElementById('items-caught').textContent = itemsCaught;
+            const progressFill = document.getElementById('progress-fill');
+            const percentage = (itemsCaught / totalItems) * 100;
+            progressFill.style.width = percentage + '%';
+            
+            if (itemsCaught >= totalItems && lives > 0) {
+                gameActive = false;
+                clearInterval(itemInterval);
+                setTimeout(() => {
+                    showGameComplete();
+                }, 1000);
+            }
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0; 
+                shuffleArray(questions);
+            }
+            
+            const question = questions[currentQuestionIndex];
+            const questionText = document.getElementById('question-text');
+            const optionsGrid = document.getElementById('options-grid');
+            const inputContainer = document.getElementById('input-container');
+            const feedback = document.getElementById('feedback');
+            
+            optionsGrid.innerHTML = '';
+            inputContainer.innerHTML = '';
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+            document.getElementById('close-btn').style.display = 'none';
+
+            if (question.type === "speaking" || question.type === "sentence") {
+                let taskHtml = '';
+                if(question.type === "speaking") {
+                    taskHtml = `
+                        <div class="task-card">
+                            <div>🗣️ <strong>Task:</strong> Say a sentence out loud!</div>
+                            <div>⏱️ <strong>Time:</strong> <span>${question.tense}</span></div>
+                            <div>🎬 <strong>Verb:</strong> <span>${question.verb}</span></div>
+                        </div>
+                    `;
+                } else {
+                    taskHtml = `
+                        <div class="task-card">
+                            <div>🗣️ <strong>Task:</strong> Say the sentence out loud!</div>
+                            <div>⏱️ <strong>Time:</strong> <span>${question.tense}</span></div>
+                            <div>🎭 <strong>Form:</strong> <span>${question.form}</span></div>
+                            <div>👤 <strong>Subject:</strong> <span>${question.subject}</span></div>
+                            ${question.verb ? `<div>🎬 <strong>Verb:</strong> <span>${question.verb}</span></div>` : ''}
+                            <div>🔤 <strong>Word:</strong> <span>${question.word}</span></div>
+                        </div>
+                    `;
+                }
+                
+                questionText.innerHTML = taskHtml;
+                optionsGrid.style.display = 'none';
+                inputContainer.style.display = 'flex';
+                
+                const showAnswerBtn = document.createElement('button');
+                showAnswerBtn.className = 'submit-btn';
+                showAnswerBtn.textContent = 'Show Answer';
+                
+                showAnswerBtn.onclick = () => {
+                    showAnswerBtn.style.display = 'none';
+                    
+                    if(question.type === "speaking") {
+                        feedback.innerHTML = `<strong>Form:</strong> ${question.targetWord}. <span style="font-weight:normal;">${question.explanation}</span>`;
+                    } else {
+                        feedback.innerHTML = `<strong>Answer:</strong> ${question.correctAnswers[0]}<br><span style="font-size:1.1rem; font-weight:normal;">${question.explanation}</span>`;
+                    }
+                    feedback.className = 'feedback correct';
+
+                    const evalContainer = document.createElement('div');
+                    evalContainer.className = 'eval-btn-container';
+                    evalContainer.innerHTML = `
+                        <button class="eval-btn btn-correct" onclick="handleOralEval(true)">Got it right! 👍</button>
+                        <button class="eval-btn btn-incorrect" onclick="handleOralEval(false)">Made a mistake 👎</button>
+                    `;
+                    inputContainer.appendChild(evalContainer);
+                };
+
+                inputContainer.appendChild(showAnswerBtn);
+
+            } else if (question.type === "input") {
+                questionText.textContent = question.question;
+                optionsGrid.style.display = 'none';
+                inputContainer.style.display = 'flex';
+                
+                const inputEl = document.createElement('input');
+                inputEl.type = 'text';
+                inputEl.className = 'text-input';
+                inputEl.id = 'text-answer';
+                inputEl.placeholder = 'Type word here...';
+                inputEl.autocomplete = 'off';
+                
+                inputEl.onkeypress = function(e) {
+                    if (e.key === 'Enter') checkInputAnswer();
+                };
+
+                const checkBtn = document.createElement('button');
+                checkBtn.className = 'submit-btn';
+                checkBtn.textContent = 'Check Answer';
+                checkBtn.onclick = checkInputAnswer;
+
+                inputContainer.appendChild(inputEl);
+                inputContainer.appendChild(checkBtn);
+                
+                setTimeout(() => inputEl.focus(), 100);
+
+            } else {
+                questionText.textContent = question.question;
+                optionsGrid.style.display = 'grid';
+                inputContainer.style.display = 'none';
+
+                question.options.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn';
+                    button.textContent = option;
+                    button.onclick = () => selectAnswer(index);
+                    optionsGrid.appendChild(button);
+                });
+            }
+            
+            document.getElementById('question-modal').style.display = 'flex';
+            answered = false;
+        }
+
+        window.handleOralEval = function(isCorrect) {
+            if (answered) return;
+            answered = true;
+            
+            document.querySelector('.eval-btn-container').style.display = 'none';
+            
+            if (isCorrect) {
+                itemsCaught++;
+                updateProgress();
+            } else {
+                loseLife();
+            }
+            
+            document.getElementById('close-btn').style.display = 'block';
+            currentQuestionIndex++;
+        };
+
+        function checkInputAnswer() {
+            if (answered) return;
+            
+            const inputEl = document.getElementById('text-answer');
+            let rawUserAnswer = inputEl.value.trim();
+            
+            if (rawUserAnswer === '') return;
+            
+            answered = true;
+            const question = questions[currentQuestionIndex];
+            const feedback = document.getElementById('feedback');
+            
+            inputEl.disabled = true;
+            const checkBtn = document.querySelector('.input-container .submit-btn');
+            if(checkBtn) checkBtn.disabled = true;
+
+            let cleanUserAnswer = rawUserAnswer.toLowerCase().replace(/\s+/g, ' ').trim();
+            let isCorrect = cleanUserAnswer === question.correctAnswer.toLowerCase();
+
+            if (isCorrect) {
+                inputEl.style.borderColor = '#4caf50';
+                inputEl.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+                feedback.textContent = `Brilliant! ${question.explanation}`;
+                feedback.className = 'feedback correct';
+                itemsCaught++;
+                updateProgress();
+            } else {
+                inputEl.style.borderColor = '#db7093';
+                inputEl.style.backgroundColor = 'rgba(219, 112, 147, 0.1)';
+                feedback.textContent = `Not quite. The correct answer is: "${question.correctAnswer}". ${question.explanation}`;
+                feedback.className = 'feedback incorrect';
+                loseLife();
+            }
+            
+            document.getElementById('close-btn').style.display = 'block';
+            currentQuestionIndex++;
+        }
+
+        function selectAnswer(selectedIndex) {
+            if (answered) return;
+            
+            answered = true;
+            const question = questions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.option-btn');
+            const feedback = document.getElementById('feedback');
+            
+            buttons.forEach((button, index) => {
+                if (index === question.correct) {
+                    button.classList.add('correct');
+                } else if (index === selectedIndex && selectedIndex !== question.correct) {
+                    button.classList.add('incorrect');
+                }
+                button.style.pointerEvents = 'none';
+            });
+            
+            if (selectedIndex === question.correct) {
+                feedback.textContent = `Brilliant! ${question.explanation}`;
+                feedback.className = 'feedback correct';
+                itemsCaught++;
+                updateProgress();
+            } else {
+                feedback.textContent = `Not quite right. ${question.explanation}`;
+                feedback.className = 'feedback incorrect';
+                loseLife();
+            }
+            
+            document.getElementById('close-btn').style.display = 'block';
+            currentQuestionIndex++;
+        }
+
+        function closeModal() {
+            document.getElementById('question-modal').style.display = 'none';
+            
+            if (lives <= 0) {
+                showGameOver();
+            }
+        }
+
+        function showGameComplete() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('game-complete').style.display = 'block';
+            document.getElementById('game-over').style.display = 'none';
+            
+            const finalScore = document.getElementById('final-score');
+            const completionMessage = document.getElementById('completion-message');
+            
+            finalScore.textContent = `Congratulations! You caught all ${totalItems} spring items!`;
+            completionMessage.textContent = "Fantastic work! You've practiced spelling, choosing grammar, and even speaking out loud! 🌸🗣️📝";
+        }
+
+        function showGameOver() {
+            document.getElementById('game-area').style.display = 'none';
+            document.getElementById('game-complete').style.display = 'none';
+            document.getElementById('game-over').style.display = 'block';
+            document.getElementById('game-over-score').textContent = itemsCaught;
+        }
+
+        function restartGame() {
+            itemsCaught = 0;
+            currentQuestionIndex = 0;
+            answered = false;
+            gameActive = true;
+            lives = 5;
+            
+            shuffleArray(questions);
+            updateLivesDisplay();
+            
+            const catchableItems = document.querySelectorAll('.catchable-item');
+            catchableItems.forEach(item => item.remove());
+            
+            document.getElementById('items-caught').textContent = '0';
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('game-complete').style.display = 'none';
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('question-modal').style.display = 'none';
+            
+            startItemSpawning();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>

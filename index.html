@@ -90,7 +90,6 @@
             filter: brightness(1.2);
         }
 
-        /* Анимация всплывающего штрафа */
         .penalty-text {
             position: absolute;
             color: #d32f2f;
@@ -362,7 +361,7 @@
 
         <div class="progress-bar">
             <div class="stats-container">
-                <div class="progress-text">Items caught: <span id="items-caught">0</span> of 17</div>
+                <div class="progress-text">Items caught: <span id="items-caught">0</span> of 21</div>
                 <div class="lives-text">Lives: <span id="lives-display">❤️❤️❤️❤️❤️</span></div>
             </div>
             <div class="progress-track">
@@ -423,6 +422,14 @@
                 targetWord: "saw",
                 explanation: "The past form is 'saw'."
             },
+            // НОВОЕ: Future Simple Speaking
+            {
+                type: "speaking",
+                tense: "Future Simple",
+                verb: "to bloom",
+                targetWord: "will bloom",
+                explanation: "The future form uses 'will' + the base verb."
+            },
 
             // --- ЗАДАНИЯ НА СОСТАВЛЕНИЕ ПРЕДЛОЖЕНИЙ (Устные) ---
             {
@@ -481,6 +488,17 @@
                 correctAnswers: ["The bunny isn't hopping."],
                 explanation: "Present Continuous negative for 'it' (the bunny) is 'isn't' + verb with '-ing'. Remember to double the 'p' in hopping!"
             },
+            // НОВОЕ: Future Simple Sentence
+            {
+                type: "sentence",
+                tense: "Future Simple",
+                form: "Positive ➕",
+                subject: "The sun",
+                verb: "to shine",
+                word: "brightly",
+                correctAnswers: ["The sun will shine brightly."],
+                explanation: "We use 'will' + base verb (will shine) for future actions."
+            },
 
             // --- ОБЫЧНЫЕ ЗАДАНИЯ ---
             {
@@ -534,11 +552,25 @@
                 options: ["am", "is", "are"],
                 correct: 1,
                 explanation: "We use 'is' for one rabbit (it) doing something right now."
+            },
+            // НОВОЕ: Future Simple Choice & Input
+            {
+                type: "choice",
+                question: "Tomorrow, the children _____ a tree in the garden.",
+                options: ["will plant", "plants", "planted"],
+                correct: 0,
+                explanation: "We use 'will plant' (Future Simple) because the action happens 'tomorrow'."
+            },
+            {
+                type: "input",
+                question: "Type the correct words: The snow _____ (melt) soon.",
+                correctAnswer: "will melt",
+                explanation: "For future events, we use 'will' before the base verb."
             }
         ];
 
         let itemsCaught = 0;
-        let totalItems = 17; 
+        let totalItems = 21; // Увеличил количество предметов под новые вопросы
         let currentQuestionIndex = 0;
         let answered = false;
         let gameActive = true;
@@ -566,7 +598,6 @@
                 gameActive = false;
                 clearInterval(itemInterval);
                 
-                // Если мы находимся на главном экране (модальное окно закрыто), показываем Game Over сразу
                 if (document.getElementById('question-modal').style.display !== 'flex') {
                     setTimeout(showGameOver, 800);
                 }
@@ -597,11 +628,12 @@
         }
 
         function startItemSpawning() {
+            // Уменьшил интервал появления (спавна) предметов до 3 секунд (было 4)
             itemInterval = setInterval(() => {
                 if (gameActive && itemsCaught < totalItems) {
                     createCatchableItem();
                 }
-            }, 4000); 
+            }, 3000); 
         }
 
         function createCatchableItem() {
@@ -609,7 +641,6 @@
             const goodEmojis = ['🌸', '🦋', '🐝', '🌼', '🐞', '🌷', '🐦', '🌈', '🌞'];
             const badEmojis = ['🌩️', '🌧️', '🌪️', '🥀', '🕷️', '❄️'];
             
-            // 30% шанс, что появится "плохой" предмет
             const isBad = Math.random() < 0.3;
             
             const item = document.createElement('div');
@@ -622,9 +653,10 @@
             }
             
             item.style.left = Math.random() * 80 + 10 + '%';
-            item.style.animationDuration = (Math.random() * 4 + 7) + 's';
             
-            // Передаем статус "isBad" и событие "e" для определения координат клика
+            // Ускорил падение (было от 7 до 11 сек, стало от 4 до 6.5 сек)
+            item.style.animationDuration = (Math.random() * 2.5 + 4) + 's';
+            
             item.onclick = (e) => catchItem(item, isBad, e);
             
             gameArea.appendChild(item);
@@ -633,7 +665,7 @@
                 if (item.parentNode) {
                     item.parentNode.removeChild(item);
                 }
-            }, 12000); 
+            }, 8000); // Тайм-аут очистки тоже уменьшен (было 12000)
         }
 
         function showPenaltyText(x, y) {
@@ -642,7 +674,6 @@
             penaltyText.className = 'penalty-text';
             
             const gameAreaRect = document.getElementById('game-area').getBoundingClientRect();
-            // Высчитываем позицию клика относительно игрового поля
             penaltyText.style.left = (x - gameAreaRect.left - 30) + 'px';
             penaltyText.style.top = (y - gameAreaRect.top - 40) + 'px';
             
@@ -669,7 +700,7 @@
             if (isBad) {
                 showPenaltyText(event.clientX, event.clientY);
                 loseLife();
-                return; // Останавливаем выполнение, вопрос не открывается
+                return;
             }
             
             showQuestion();
